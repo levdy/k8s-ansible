@@ -1,0 +1,15 @@
+#!/usr/bin/env ansible-playbook
+
+- name: Kubernetes setup
+  hosts: k8s_group
+  gather_facts: True
+  vars_files:
+    - vars/k8s-config.yml
+  vars:
+
+  tasks:
+
+  roles:
+    - role: k8s
+      become: yes
+

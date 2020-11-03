@@ -1,0 +1,121 @@
+---
+# tasks file for Kubernetes
+
+- name: Checking requirements 
+  include: check-req.yml
+
+
+- name: Installing Kubernetes repository
+  template:
+    src: "{{ role_path }}/files/etc/yum.repos.d/kubernetes.repo"
+    dest: /etc/yum.repos.d/kubernetes.repo
+
+
+- name: Installing Kubernetes {{ k8s_config.k8s.version }} applications - kubelet, kubeadm, kubectl
+  yum:
+    name:  
+      - kubelet-{{ k8s_config.k8s.version }}
+      - kubeadm-{{ k8s_config.k8s.version }}
+      - kubectl-{{ k8s_config.k8s.version }}
+
+
+- name: kubeadm reset
+  shell: "kubeadm reset --force"
+  ignore_errors: True
+  changed_when: False
+  when: k8s_config.reset_config == True
+
+
+- name: Remove ~/.kube/config
+  file:
+    path: ~/.kube/config
+    state: absent
+  when: k8s_config.reset_config == True
+
+
+- name: Check Kubernetes has already been setup
+  stat:
+    path: /etc/kubernetes/admin.conf
+  register: kubernetes_config_file
+
+
+- name: Setup Kubernetes master
+  command: >
+    kubeadm init
+    --pod-network-cidr={{ k8s_config.k8s.pod_network_cidr }}
+  when: not kubernetes_config_file.stat.exists 
+
+
+- name: Ensure .kube directory exists.
+  file:
+    path: ~/.kube
+    state: directory
+    mode: 0755
+
+
+- name: Copy kubernetes admin.conf to ~/.kube/conf.
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: ~/.kube/config
+    owner: root
+    group: root
+    mode: 0600
+    remote_src: yes
+    
+
+# flannel install
+# kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+- name: Setup Flannel networking
+  command: "{{ item }}"
+  with_items:
+    - kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+  when: k8s_config.cni.name == 'flannel'
+
+
+- name: Untaint master node 
+  shell: "kubectl taint nodes --all node-role.kubernetes.io/master-"
+  ignore_errors: True
+  when: k8s_config.installation_type == 'single_node'
+
+
+# https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v0.40.2/deploy/static/provider/baremetal/deploy.yaml
+- name: Set up ingress-nginx controller
+  command: "{{ item }}"
+  with_items:
+    - kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v{{ k8s_config.ingress_controller.config.version }}/deploy/static/provider/baremetal/deploy.yaml
+  when: k8s_config.ingress_controller.name == 'ingress-nginx'
+
+
+- name: Copy ingress-nginx patch file for using host network
+  copy:
+    src: "{{ role_path }}/files/patch-ingress-nginx-host-networking.yml"
+    dest: /tmp/patch-ingress-nginx-host-networking.yml
+  when:
+    - k8s_config.ingress_controller.name == 'ingress-nginx'
+    - k8s_config.ingress_controller.config.host_network == True
+
+
+- name: kubectl patch ingress-nginx controller for using host network
+  shell: "{{ item }}"
+  with_items:
+    - kubectl -n ingress-nginx patch deployment ingress-nginx-controller --patch="$(</tmp/patch-ingress-nginx-host-networking.yml)"
+  when:
+    - k8s_config.ingress_controller.name == 'ingress-nginx'
+    - k8s_config.ingress_controller.config.host_network == True
+ 
+
+- name: Remove  /tmp/patch-ingress-nginx-host-networking.yml
+  file:
+    path:  /tmp/patch-ingress-nginx-host-networking.yml
+    state: absent
+  when: 
+    - k8s_config.ingress_controller.name == 'ingress-nginx'
+    - k8s_config.ingress_controller.config.host_network == True
+ 
+
+- name: Enable kubelet service
+  service:
+    name: kubelet
+    enabled: yes
+    state: restarted
+

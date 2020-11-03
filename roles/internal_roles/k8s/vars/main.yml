@@ -1,0 +1,4 @@
+---
+# vars file for k8s
+supported_os_versions: 
+  - 'RedHat-7'

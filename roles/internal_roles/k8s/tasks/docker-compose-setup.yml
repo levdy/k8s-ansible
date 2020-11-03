@@ -1,0 +1,21 @@
+
+- name: check docker-compose-{{k8s_config.container_runtime.docker_compose.version}} file 
+  stat: 
+    path: /usr/local/bin/docker-compose-{{k8s_config.container_runtime.docker_compose.version}}
+  register: docker_compose_file
+
+
+- name: Install docker-compose
+  shell: 
+    cmd: "curl -L \"https://github.com/docker/compose/releases/download/{{k8s_config.container_runtime.docker_compose.version}}/docker-compose-$(uname -s)-$(uname -m)\" -o /usr/local/bin/docker-compose-{{k8s_config.container_runtime.docker_compose.version}} && chmod 755 /usr/local/bin/docker-compose-{{k8s_config.container_runtime.docker_compose.version}}"
+    warn: False
+  when: 
+    - docker_compose_file.stat.exists == False
+    - k8s_config.container_runtime.name == 'docker'
+
+
+- name: /usr/local/bin/docker-compose symlink setup
+  file:
+    src: /usr/local/bin/docker-compose-{{k8s_config.container_runtime.docker_compose.version}}
+    dest: /usr/local/bin/docker-compose
+    state: link

@@ -1,0 +1,17 @@
+---
+# tasks file for k8s
+
+#- name: Base setup
+#  include: base.yml
+
+#- name: Docker setup
+#  include: docker-setup.yml
+
+- name: Docker compose setup
+  include: docker-compose-setup.yml
+
+#- name: Installing Kubernetes packages
+#  include: k8s-setup.yml
+
+#- name: Installing Helm
+#  include: helm-setup.yml

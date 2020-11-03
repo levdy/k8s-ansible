@@ -1,0 +1,8 @@
+- name: Checking remote OS is in supported OS versions ( {{ supported_os_versions }} )
+  fail:
+    msg: | 
+      "Supported OS list: {{ supported_os_versions }}"
+      "Remote OS is {{ hostvars[inventory_hostname].ansible_distribution }} {{ hostvars[inventory_hostname].ansible_distribution_major_version }}"
+      "OS Family: {{ hostvars[inventory_hostname].ansible_os_family }}"
+  when: 
+    - not ( '-'.join( (hostvars[inventory_hostname].ansible_os_family, hostvars[inventory_hostname].ansible_distribution_major_version) ) in supported_os_versions )

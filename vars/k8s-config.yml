@@ -1,0 +1,23 @@
+k8s_config:
+  reset_config: False # runs "kubeadm reset" when True
+  flush_iptables: False 
+  installation_type: single_node
+  k8s: 
+    version: 1.19.3
+    pod_network_cidr: 10.244.0.0/16
+    #pod_network_cidr: 100.244.0.0/16  # for Flannel
+  helm: 
+    version: 3.4.0
+  container_runtime:
+    name: docker
+    docker:
+      version: 19.03.13
+    docker_compose: 
+      version: 1.27.4
+  cni:
+    name: flannel # weave | flannel | calico
+  ingress_controller:
+    name: ingress-nginx
+    config:
+      version: 0.40.2
+      host_network: True

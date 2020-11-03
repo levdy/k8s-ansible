@@ -1,0 +1,12 @@
+[defaults]
+inventory = hosts
+remote_user = {{ cfg['remote_user'] }}
+private_key_file = {{ cfg['private_key_file'] }}
+host_key_checking = False
+transport = paramiko
+#vault_password_file  = ~/.secrets/ansible-vault/.vault_pass
+interpreter_python = /usr/bin/python
+#interpreter_python = /usr/bin/python3.6
+roles_path = roles/ansible_roles:roles/internal_roles
+
+

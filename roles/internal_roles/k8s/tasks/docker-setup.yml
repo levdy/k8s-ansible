@@ -1,0 +1,31 @@
+---
+# tasks file for docker
+
+- name: Install Docker prerequisite packages
+  yum:
+    name:  
+      - yum-utils
+      - device-mapper-persistent-data
+      - lvm2
+
+- name: "Configuring docker-ce repo"
+  get_url:
+    url: https://download.docker.com/linux/centos/docker-ce.repo
+    dest: /etc/yum.repos.d/docker-ce.repo
+    mode: 0644
+
+
+- name: Installing Docker version {{ k8s_config.container_runtime.docker.version }}
+  yum:
+    name: docker-ce-{{ k8s_config.container_runtime.docker.version }} 
+    state: present
+  when:
+    - k8s_config.container_runtime.name == 'docker'
+
+
+
+- name: Starting and Enabling Docker service
+  service:
+    name: docker
+    state: started
+    enabled: yes

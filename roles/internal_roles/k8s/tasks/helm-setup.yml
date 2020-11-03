@@ -1,0 +1,28 @@
+---
+# tasks file for Helm
+
+- name: Downloading Helm {{ k8s_config.helm.version }} 
+  unarchive:
+    src: https://get.helm.sh/helm-v{{ k8s_config.helm.version }}-linux-amd64.tar.gz
+    dest: /tmp
+    creates: /usr/local/bin/helm-{{ k8s_config.helm.version }}
+    remote_src: yes
+
+
+- name: Moving helm binary to /usr/local/bin/
+  command: cp /tmp/linux-amd64/helm /usr/local/bin/helm-{{ k8s_config.helm.version }}
+  args:
+    creates: /usr/local/bin/helm-{{ k8s_config.helm.version }}
+
+
+- name: /usr/local/bin/helm symlink setup
+  file:
+    src: /usr/local/bin/helm-{{ k8s_config.helm.version }}
+    dest: /usr/local/bin/helm
+    state: link
+
+
+- name: Remove Helm temporary dir /tmp/linux-amd64
+  file:
+    path: /tmp/linux-amd64
+    state: absent

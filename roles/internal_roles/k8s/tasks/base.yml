@@ -1,0 +1,41 @@
+
+- name: Install required base packages
+  yum:
+    name:  
+      - telnet
+      - vim-enhanced
+      - wget
+      - gcc
+      - git
+      - tree
+      - bind-utils
+      - lvm2
+      - device-mapper-persistent-data
+
+
+- name: SELinux in permissive mode
+  selinux:
+    policy: targeted
+    state: permissive 
+
+
+- name: Set SELinux in permissive mode until the machine is rebooted
+  command: setenforce permissive
+  ignore_errors: true
+  changed_when: false
+
+
+- name: Disable SWAP since kubernetes can't work with swap enabled (1/2)
+  shell: |
+    swapoff -a
+
+
+- name: Remove swap from /etc/fstab
+  mount:
+    name: "{{ item }}"
+    fstype: swap
+    state: absent
+  with_items:
+    - swap
+    - none
+

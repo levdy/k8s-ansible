@@ -1,0 +1,6 @@
+# GCP hosts
+gcp_monit02_test ansible_connection=ssh 
+
+[k8s_group]
+gcp_monit02_test
+
